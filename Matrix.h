@@ -1,7 +1,7 @@
 //
 // Created by cyr on 26.10.2020.
 //
-
+#pragma once
 #ifndef ILS_PPP_MATRIX_H
 #define ILS_PPP_MATRIX_H
 
@@ -58,6 +58,8 @@ public:
     Matrix<T> rowReduceFromGaussian();
 
     Matrix<T> inverse();
+
+    int LD_factorization(const int &, Matrix<T>, Matrix<T>, Matrix<T>);
 
     [[nodiscard]] int getRows() const;
 
@@ -293,7 +295,7 @@ Matrix<T> Matrix<T>::createIdentity(int size) {
 }
 
 template<class T>
-Matrix<T> Matrix<T>::solve(Matrix A, Matrix b) {
+Matrix<T> Matrix<T>::solve(Matrix A, Matrix b) { //A*x=b
     // Gaussian elimination
     for (int i = 0; i < A.rows_; ++i) {
         if (A.p[i][i] == 0) {
@@ -315,7 +317,7 @@ Matrix<T> Matrix<T>::solve(Matrix A, Matrix b) {
     }
 
     // Back substitution
-    Matrix x(b.rows_, 1);
+    Matrix<T> x(b.rows_, 1);
     x.p[x.rows_ - 1][0] = b.p[x.rows_ - 1][0] / A.p[x.rows_ - 1][x.rows_ - 1];
     if (x.p[x.rows_ - 1][0] < EPS && x.p[x.rows_ - 1][0] > -1 * EPS)
         x.p[x.rows_ - 1][0] = 0;
@@ -475,6 +477,41 @@ Matrix<T> Matrix<T>::inverse() {
         }
     }
     return AInverse;
+}
+
+
+/* LD factorization (Q=L'*diag(D)*L) ------------------------------------------------------------------------*/
+template<class T>
+int Matrix<T>::LD_factorization(const int &n, Matrix<T> Q, Matrix<T> L, Matrix<T> D) {
+    int i, j, k;
+    int info = 0;
+    T a;
+
+    Matrix<T> A(std::move(Q));
+
+    for (i = n - 1; i >= 0; i--) {
+        if ((D(i, 1) = A(i, i)) <= 0.0) {
+            info = -1;
+            break;
+        }
+        a = sqrt(D(i, 1));
+        for (j = 0; j <= i; j++) {
+            L(i, j) = A(i, j) / a;
+        }
+        for (j = 0; j <= i - 1; j++) {
+            for (k = 0; k <= j; k++) {
+                A(j, k) -= L(i, k) * L(i, j);
+            }
+        }
+        for (j = 0; j <= i; j++) {
+            L(i, j) /= L(i, i);
+        }
+    }
+    if (!info) {
+        std::cerr << "LD factorization error: " << __FILE__ << ": "
+                  << __LINE__ << '\n';
+    }
+    return info;
 }
 
 

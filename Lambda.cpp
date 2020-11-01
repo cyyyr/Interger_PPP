@@ -7,75 +7,40 @@
 #include "Lambda.h"
 #include "Matrix.h"
 
-/* LD factorization (Q=L'*diag(D)*L) ------------------------------------------------------------------------*/
-int Lambda::LD_factorization(const int &n, std::vector<double> Q, std::vector<double> L, std::vector<double> D) {
-    int i, j, k;
-    int info = 0;
-    double a;
-
-    std::vector<double> A(std::move(Q));
-
-    for (i = n - 1; i >= 0; i--) {
-        if ((D[i] = A[i + i * n]) <= 0.0) {
-            info = -1;
-            break;
-        }
-        a = sqrt(D[i]);
-        for (j = 0; j <= i; j++) {
-            L[i + j * n] = A[i + j * n] / a;
-        }
-        for (j = 0; j <= i - 1; j++) {
-            for (k = 0; k <= j; k++) {
-                A[j + k * n] -= L[i + k * n] * L[i + j * n];
-            }
-        }
-        for (j = 0; j <= i; j++) {
-            L[i + j * n] /= L[i + i * n];
-        }
-    }
-    if (!info) {
-        std::cerr << "LD factorization error: " << __FILE__ << ": "
-                  << __LINE__ << '\n';
-    }
-    return info;
-}
-
-
-void Lambda::gauss_transformation(const int &n, std::vector<double> L, std::vector<double> Z, int i, int j) {
+void Lambda::gauss_transformation(const int &n, Matrix<double> L, Matrix<double> Z, int i, int j) {
     int k;
     int mu;
 
-    mu = static_cast<int>(std::round(L[i + j * n]));
+    mu = static_cast<int>(std::round(L(i, j)));
     for (k = i; k < n; k++)
-        L[k + n * j] -= mu * L[k + i * n];
+        L(k, j) -= mu * L(k, i);
     for (k = 0; k < n; k++)
-        Z[k + n * j] -= mu * Z[k + i * n];
+        Z(k, j) -= mu * Z(k, i);
 }
 
-void
-Lambda::permutations(const int &n, std::vector<double> L, std::vector<double> D, int j, double del,
-                     std::vector<double> Z) {
+void Lambda::permutations(const int &n, Matrix<double> L, Matrix<double> D, int j, double del,
+                          Matrix<double> Z) {
     int k;
     double eta;
     double lam;
     double a0;
     double a1;
 
-    eta = D[j] / del;
-    lam = D[j + 1] * L[j + 1 + j * n] / del;
-    D[j] = eta * D[j + 1];
-    D[j + 1] = del;
+    eta = D(j, 1) / del;
+    lam = D(j + 1, 1) * L(j + 1, j) / del;
+    D(j, 1) = eta * D(j + 1, 1);
+    D(j + 1, 1) = del;
     for (k = 0; k <= j - 1; k++) {
-        a0 = L[j + k * n];
-        a1 = L[j + 1 + k * n];
-        L[j + k * n] = -L[j + 1 + j * n] * a0 + a1;
-        L[j + 1 + k * n] = eta * a0 + lam * a1;
+        a0 = L(j, k);
+        a1 = L(j + 1, k);
+        L(j, k) = -L(j + 1, j) * a0 + a1;
+        L(j + 1, k) = eta * a0 + lam * a1;
     }
-    L[j + 1 + j * n] = lam;
+    L(j + 1, j) = lam;
     for (k = j + 2; k < n; k++)
-        std::swap(L[k + j * n], L[k + (j + 1) * n]);
+        std::swap(L(k, j), L(k, j + 1));
     for (k = 0; k < n; k++)
-        std::swap(Z[k + j * n], Z[k + (j + 1) * n]);
+        std::swap(Z(k, j), Z(k, j + 1));
 }
 
 /* lambda reduction (z=Z'*a, Qz=Z'*Q*Z=L'*diag(D)*L) (ref.[1]) ---------------*/
@@ -220,6 +185,7 @@ int Lambda::lambda_reduction(const int &n, const std::vector<double> &Q, std::ve
 
     return 0;
 }
+
 /* mlambda search --------------------------------------------------------------
  * search by  mlambda (ref [2]) for integer least square
  * args   : int    n      I  number of float parameters
@@ -263,33 +229,30 @@ int Lambda::lambda_search(const int &n, const int &m, const std::vector<double> 
  * return : status (0:ok,other:error)
  * notes  : matrix stored by column-major order (fortran convention)
  *-----------------------------------------------------------------------------*/
-int Lambda::lambda(const int &n, const int &m, const std::vector<double> &a, const std::vector<double> &Q,
-                   const std::vector<double> &F,
-                   std::vector<double> s) {
-    int info;
-    std::vector<double> L(n * n, 0.0);
-    std::vector<double> D(n);
-    std::vector<double> Z(n);
-    std::vector<double> z(n);
-    std::vector<double> E(n * m);
-
+int Lambda::lambda(const int &n, const int &m, const Matrix<double> &a, const Matrix<double> &Q,
+                   Matrix<double> F, const Matrix<double> &s) {
     if (n <= 0 || m <= 0) {
         return -1;
     }
+    int info;
+    Matrix<double> L(n, n);
+    Matrix<double> D(n, 1);
+    Matrix<double> Z(n, 1);
+    Matrix<double> z(n, 1);
+    Matrix<double> E(n, m);
 
-    for (int i = 0; i < n; i++) {
-        Z[i + i * n] = 1.0;
+    for (int i = 0; i < n; ++i) {
+        Z(i, i) = 1.0;
     }
 
     /* LD factorization */
     if (!(info = LD_factorization(n, Q, L, D))) {
         /* lambda reduction */
         reduction(n, L, D, Z);
-        //matmul("TN", n, 1, n, 1.0, Z, a, 0.0, z); /* z=Z'*a */
-
+        z = Z.transpose() * a; /* z=Z'*a */
         /* mlambda search */
-        if (!(info = search(n, m, L, D, z, E, std::move(s)))) {
-            //info = solve("T", Z, E, n, m, F); /* F=Z'\E */
+        if (!(info = search(n, m, L, D, z, E, s))) {
+            F = Matrix<double>::solve(Z.transpose(), E); /* F=Z'\E */
         }
     }
     return info;

@@ -1,13 +1,14 @@
 //
 // Created by cyr on 23.10.2020.
 //
-
+#pragma once
 #ifndef ILS_PPP_LAMBDA_H
 #define ILS_PPP_LAMBDA_H
 
 #include <vector>
 #include <utility> // std::swap
 #include <cmath> // std::round [(floor((x) + 0.5))]
+#include "Matrix.h"
 
 class Lambda {
 private:
@@ -19,28 +20,26 @@ private:
     }
 
 private:
-    static int LD_factorization(const int &n, std::vector<double> Q, std::vector<double> L, std::vector<double> D);
-
-    static void gauss_transformation(const int &n, std::vector<double> L, std::vector<double> Z, int i, int j);
+    static void gauss_transformation(const int &n, Matrix<double> L, Matrix<double> Z, int i, int j);
 
     static void
-    permutations(const int &n, std::vector<double> L, std::vector<double> D, int j, double del, std::vector<double> Z);
+    permutations(const int &n, Matrix<double> L, Matrix<double> D, int j, double del,
+                 Matrix<double> Z);
 
-    static void reduction(const int &n, std::vector<double> L, std::vector<double> D, const std::vector<double> &Z);
+    static void reduction(const int &n, Matrix<double> L, Matrix<double> D, const Matrix<double> &Z);
 
-    [[nodiscard]] int search(const int &n, const int &m, const std::vector<double> &L, const std::vector<double> &D,
-                             const std::vector<double> &zs,
-                             std::vector<double> zn, std::vector<double> s) const;
+    [[nodiscard]] int search(const int &n, const int &m, const Matrix<double> &L, const Matrix<double> &D,
+                             const Matrix<double> &zs,
+                             Matrix<double> zn, Matrix<double> s) const;
 
-    static int lambda_reduction(const int &n, const std::vector<double> &Q, std::vector<double> Z);
+    static int lambda_reduction(const int &n, const Matrix<double> &Q, Matrix<double> Z);
 
-    int lambda_search(const int &n, const int &m, const std::vector<double> &a, const std::vector<double> &Q,
-                      std::vector<double> F, std::vector<double> s);
+    int lambda_search(const int &n, const int &m, const Matrix<double> &a, const Matrix<double> &Q,
+                      Matrix<double> F, Matrix<double> s);
 
 public:
-    int lambda(const int &n, const int &m, const std::vector<double> &a, const std::vector<double> &Q,
-               const std::vector<double> &F,
-               std::vector<double> s);
+    int lambda(const int &n, const int &m, const Matrix<double> &a, const Matrix<double> &Q,
+               Matrix<double> F, const Matrix<double> &s);
 
 
 };
