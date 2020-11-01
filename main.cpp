@@ -11,8 +11,8 @@ int main() {
      * 5) График
     */
     int n = 2, m = 2;
-    Matrix mat(2,2);
-    mat =
+    Matrix<int> mat(2,2);
+    std::cout << mat.getRows() << ',' << mat.getCols() << std::endl;
 
-
+    std::cin.get();
 }

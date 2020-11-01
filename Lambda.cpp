@@ -285,11 +285,11 @@ int Lambda::lambda(const int &n, const int &m, const std::vector<double> &a, con
     if (!(info = LD_factorization(n, Q, L, D))) {
         /* lambda reduction */
         reduction(n, L, D, Z);
-        matmul("TN", n, 1, n, 1.0, Z, a, 0.0, z); /* z=Z'*a */
+        //matmul("TN", n, 1, n, 1.0, Z, a, 0.0, z); /* z=Z'*a */
 
         /* mlambda search */
         if (!(info = search(n, m, L, D, z, E, std::move(s)))) {
-            info = solve("T", Z, E, n, m, F); /* F=Z'\E */
+            //info = solve("T", Z, E, n, m, F); /* F=Z'\E */
         }
     }
     return info;
