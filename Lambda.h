@@ -22,24 +22,21 @@ private:
 private:
     static void gauss_transformation(const int &n, Matrix<double> L, Matrix<double> Z, int i, int j);
 
-    static void
-    permutations(const int &n, Matrix<double> L, Matrix<double> D, int j, double del,
-                 Matrix<double> Z);
+    static void permutations(const int &, Matrix<double>, Matrix<double>, int, double, Matrix<double>);
 
-    static void reduction(const int &n, Matrix<double> L, Matrix<double> D, const Matrix<double> &Z);
+    static void reduction(const int &, const Matrix<double> &, const Matrix<double> &, const Matrix<double> &);
 
-    [[nodiscard]] int search(const int &n, const int &m, const Matrix<double> &L, const Matrix<double> &D,
-                             const Matrix<double> &zs,
-                             Matrix<double> zn, Matrix<double> s) const;
+    [[nodiscard]] int search(const int &, const int &, const Matrix<double> &, const Matrix<double> &,
+                             const Matrix<double> &, const Matrix<double> &, const Matrix<double> &) const;
 
-    static int lambda_reduction(const int &n, const Matrix<double> &Q, Matrix<double> Z);
+    static int lambda_reduction(const int &, const Matrix<double> &, const Matrix<double> &);
 
-    int lambda_search(const int &n, const int &m, const Matrix<double> &a, const Matrix<double> &Q,
-                      Matrix<double> F, Matrix<double> s);
+    int lambda_search(const int &, const int &, const Matrix<double> &, const Matrix<double> &,
+                      const Matrix<double> &, const Matrix<double> &);
 
 public:
-    int lambda(const int &n, const int &m, const Matrix<double> &a, const Matrix<double> &Q,
-               Matrix<double> F, const Matrix<double> &s);
+    int lambda(const int &, const int &, const Matrix<double> &, const Matrix<double> &,
+               Matrix<double>, const Matrix<double> &);
 
 
 };

@@ -27,6 +27,8 @@ public:
 
     inline T &operator()(int x, int y) { return p[x][y]; }
 
+    inline T &operator()(int x, int y) const { return p[x][y]; }
+
     Matrix<T> &operator+=(const Matrix<T> &);
 
     Matrix<T> &operator-=(const Matrix<T> &);
@@ -59,7 +61,7 @@ public:
 
     Matrix<T> inverse();
 
-    int LD_factorization(const int &, Matrix<T>, Matrix<T>, Matrix<T>);
+    static int LD_factorization(const int &, const Matrix<T> &, Matrix<T>, Matrix<T>);
 
     [[nodiscard]] int getRows() const;
 
@@ -482,12 +484,12 @@ Matrix<T> Matrix<T>::inverse() {
 
 /* LD factorization (Q=L'*diag(D)*L) ------------------------------------------------------------------------*/
 template<class T>
-int Matrix<T>::LD_factorization(const int &n, Matrix<T> Q, Matrix<T> L, Matrix<T> D) {
+int Matrix<T>::LD_factorization(const int &n, const Matrix<T> &Q, Matrix<T> L, Matrix<T> D) {
     int i, j, k;
     int info = 0;
     T a;
 
-    Matrix<T> A(std::move(Q));
+    Matrix<T> A(Q);
 
     for (i = n - 1; i >= 0; i--) {
         if ((D(i, 1) = A(i, i)) <= 0.0) {
