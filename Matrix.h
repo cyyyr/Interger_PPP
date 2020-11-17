@@ -71,6 +71,11 @@ public:
 
     void setCols(int cols);
 
+    template<typename U> friend std::ostream &operator<<(std::ostream &, const Matrix<U> &);
+
+    template<typename U> friend std::istream &operator>>(std::istream &, Matrix<U> &);
+
+
 private:
     int rows_, cols_;
     T **p{};
@@ -98,11 +103,11 @@ Matrix<T> operator*(T, const Matrix<T> &);
 template<class T>
 Matrix<T> operator/(const Matrix<T> &, T);
 
-template<class T>
-std::ostream &operator<<(std::ostream &, const Matrix<T> &);
-
-template<class T>
-std::istream &operator>>(std::istream &, Matrix<T> &);
+//template<class T>
+//std::ostream &operator<<(std::ostream &, const Matrix<T> &);
+//
+//template<class T>
+//std::istream &operator>>(std::istream &, Matrix<T> &);
 
 #endif //ILS_PPP_MATRIX_H
 
@@ -253,6 +258,28 @@ Matrix<T> Matrix<T>::transpose() {
         }
     }
     return matrix;
+}
+
+template<class T>
+std::ostream &operator<<(std::ostream &os, const Matrix<T> &m) {
+    for (int i = 0; i < m.rows_; ++i) {
+        os << m.p[i][0];
+        for (int j = 1; j < m.cols_; ++j) {
+            os << " " << m.p[i][j];
+        }
+        os << std::endl;
+    }
+    return os;
+}
+
+template<class T>
+std::istream &operator>>(std::istream &is, Matrix<T> &m) {
+    for (int i = 0; i < m.rows_; ++i) {
+        for (int j = 0; j < m.cols_; ++j) {
+            is >> m.p[i][j];
+        }
+    }
+    return is;
 }
 
 /* GETTERS AND SETTERS
@@ -577,26 +604,4 @@ template<class T>
 Matrix<T> operator/(const Matrix<T> &m, const T &num) {
     Matrix<T> temp(m);
     return (temp /= num);
-}
-
-template<class T>
-std::ostream &operator<<(std::ostream &os, const Matrix<T> &m) {
-    for (int i = 0; i < m.rows_; ++i) {
-        os << m.p[i][0];
-        for (int j = 1; j < m.cols_; ++j) {
-            os << " " << m.p[i][j];
-        }
-        os << std::endl;
-    }
-    return os;
-}
-
-template<class T>
-std::istream &operator>>(std::istream &is, Matrix<T> &m) {
-    for (int i = 0; i < m.rows_; ++i) {
-        for (int j = 0; j < m.cols_; ++j) {
-            is >> m.p[i][j];
-        }
-    }
-    return is;
 }
