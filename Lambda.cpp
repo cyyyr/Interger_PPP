@@ -5,57 +5,96 @@
 #include <utility>
 #include <iostream>
 #include "Lambda.h"
+/*
+ * TODO: 0) расположить методы в правильном порядке (см. статью)
+ *       1) убрать лишнее, добавить недостающее
+ *       2) добиться правильной работы программы
+ *       3) написать петрову
+ *       4) убрать излишек в matrix.h/cpp
+ *       5) ???
+*/
 
-void Lambda::gauss_transformation(const int &n, Matrix<double> L, Matrix<double> Z, int i, int j) {
-    int k;
-    int mu;
 
-    mu = static_cast<int>(std::round(L(i, j)));
-    for (k = i; k < n; k++)
-        L(k, j) -= mu * L(k, i);
-    for (k = 0; k < n; k++)
-        Z(k, j) -= mu * Z(k, i);
+/* L'DL factorization (Q=L'*diag(D)*L) ------------------------------------------------------------------------*/
+int Lambda::factorization(const Matrix<double> &Q, Matrix<double> &L, Matrix<double> &D) {
+
+    int n = Q.getRows();
+    Matrix<double> A(Q.getRows(), Q.getCols());
+    A = Q;
+//    L = Matrix<double>::Zero(n, n);
+//    D = Matrix<double>::Zero(n, 1);
+
+
+    for (int i = n - 1; i >= 0; i--) {
+        D(i, 0) = A(i, i);
+        if (D(i, 0) <= 0.0) {
+            std::cerr << "LD factorization error: " << __FILE__ << ": "
+                      << __LINE__ << '\n';
+            return -1;
+        }
+        double temp = sqrt(D(i, 0));
+        for (int j = 0; j <= i; j++) {
+            L(i, j) = A(i, j) / temp;
+        }
+        for (int j = 0; j <= i - 1; j++) {
+            for (int k = 0; k <= j; k++) {
+                A(j, k) -= L(i, k) * L(i, j);
+            }
+        }
+        for (int j = 0; j <= i; j++) {
+            L(i, j) /= L(i, i);
+        }
+    }
+    return 0;
 }
 
-void Lambda::permutations(const int &n, Matrix<double> L, Matrix<double> D, int j, double del,
-                          Matrix<double> Z) {
-    int k;
-    double eta;
-    double lam;
-    double a0;
-    double a1;
+/*Integer Gauss transformations (Z_i_j = I - mu*e_i*e'_j ; where mu is an integer ---------------*/
+void Lambda::gauss_transformation(Matrix<double> &L, Matrix<double> &Z, int i, int j) {
 
-    eta = D(j, 1) / del;
-    lam = D(j + 1, 1) * L(j + 1, j) / del;
-    D(j, 1) = eta * D(j + 1, 1);
-    D(j + 1, 1) = del;
-    for (k = 0; k <= j - 1; k++) {
-        a0 = L(j, k);
-        a1 = L(j + 1, k);
-        L(j, k) = -L(j + 1, j) * a0 + a1;
-        L(j + 1, k) = eta * a0 + lam * a1;
+    int n = L.getRows();
+    int mu = (int) std::round(L(i, j));
+
+    for (int k = i; k < n; k++)
+        L(k, j) -= (double) mu * L(k, i);
+    for (int k = 0; k < n; k++)
+        Z(k, j) -= (double) mu * Z(k, i);
+}
+
+
+void Lambda::permutations(Matrix<double> &L, Matrix<double> &D, int j, double del, Matrix<double> &Z) {
+
+    const int n = L.getRows();
+    double eta = D(j, 0) / del;
+    double lam = D(j + 1, 0) * L(j + 1, j) / del;
+    D(j, 0) = eta * D(j + 1, 0);
+    D(j + 1, 0) = del;
+    for (int k = 0; k <= j - 1; k++) {
+        L(j, k) = -L(j + 1, j) * L(j, k) + L(j + 1, k);
+        L(j + 1, k) = eta * L(j, k) + lam * L(j + 1, k);
     }
     L(j + 1, j) = lam;
-    for (k = j + 2; k < n; k++)
+    for (int k = j + 2; k < n; k++)
         std::swap(L(k, j), L(k, j + 1));
-    for (k = 0; k < n; k++)
+    for (int k = 0; k < n; k++)
         std::swap(Z(k, j), Z(k, j + 1));
 }
 
 /* lambda reduction (z=Z'*a, Qz=Z'*Q*Z=L'*diag(D)*L) (ref.[1]) ---------------*/
-void Lambda::reduction(const int &n, const Matrix<double> &L, const Matrix<double> &D, const Matrix<double> &Z) {
-    int i, j = n - 2, k = n - 2;
-    double del;
+void Lambda::reduction(Matrix<double> &L, Matrix<double> &D, Matrix<double> &Z) {
+
+    int n = L.getRows();
+    int j{n - 2}, k{n - 2};
 
     while (j >= 0) {
         if (j <= k) {
-            for (i = j + 1; i < n; i++) {
-                gauss_transformation(n, L, Z, i, j);
+            for (int i = j + 1; i < n; i++) {
+                gauss_transformation(L, Z, i, j);
             }
         }
-        del = D(j, 1) + L(j + 1, j) * L(j + 1, j) * D(j + 1, 1);
-        if (del + 1E-6 < D(j + 1, 1)) { /* compared considering numerical error */
-            permutations(n, L, D, j, del, Z);
+        double del = D(j, 0) + L(j + 1, j) * L(j + 1, j) * D(j + 1, 0);
+        std::cout << "j = " << j << ", k = " << k << ", del = " << del << '\n';
+        if (del + 1E-6 < D(j + 1, 0)) { /* compared considering numerical error */
+            permutations(L, D, j, del, Z);
             k = j;
             j = n - 2;
         } else {
@@ -64,63 +103,75 @@ void Lambda::reduction(const int &n, const Matrix<double> &L, const Matrix<doubl
     }
 }
 
-/* modified lambda (mlambda) search (ref. [2]) -------------------------------*/
-int Lambda::search(const int &n, const int &m, const Matrix<double> &L, const Matrix<double> &D,
-                   const Matrix<double> &zs, const Matrix<double> &zn, const Matrix<double> &s) const {
-    int i, j, k, c;
-    int nn = 0, imax = 0;
-    double newdist, maxdist = 1E99;
-    double y;
+/* modified lambda (mlambda) search --------------------------------------------------------------
+ * TODO: CHECK UNEXPECTED INPUT
+ * args   : int    m      I  number of fixed solutions
+ *          double &L     I  unit lower triangular matrix (n x n)
+ *          double &D     I  diagonal matrix (n x 1)
+ *          double &zs    I  (n x 1)
+ *          double &zn    I  (n x m)
+ *          double &s     O  sum of squared residulas of fixed solutions (1 x m)
+ * return : status (0:ok,other:error)
+ *
+ * int    n    is a number of float parameters
+ *-----------------------------------------------------------------------------*/
+int Lambda::search(const int &m, const Matrix<double> &L,
+                   const Matrix<double> &D, Matrix<double> &zs,
+                   Matrix<double> &zn, Matrix<double> &s) const {
+    const int maxLoopCount = 10000;
+    int n = L.getRows();
+    int nn{0}, imax{0}, l;
+    double newDist, maxDist{1E99};
     Matrix<double> S(n, n);
     Matrix<double> dist(n, 1);
     Matrix<double> zb(n, 1);
     Matrix<double> z(n, 1);
     Matrix<double> step(n, 1);
 
-    k = n - 1;
-    dist(k, 1) = 0.0;
-    zb(k, 1) = zs(k, 1);
-    z(k, 1) = std::round(zb(k, 1));
-    y = zb(k, 1) - z(k, 1);
-    step(k, 1) = static_cast<double>(sgn(y));
-    for (c = 0; c < LOOPMAX; c++) {
-        newdist = dist(k, 1) + y * y / D(k, 1);
-        if (newdist < maxdist) {
+    int k = n - 1;
+    dist(k, 0) = 0.0;
+    zb(k, 0) = zs(k, 0);
+    z(k, 0) = std::round(zb(k, 0));
+    double y = zb(k, 0) - z(k, 0);
+    step(k, 0) = static_cast<double>(sign(y));
+    for (l = 0; l < maxLoopCount; l++) {
+        newDist = dist(k, 0) + y * y / D(k, 0);
+        if (newDist < maxDist) {
             if (k != 0) {
-                dist(--k, 1) = newdist;
-                for (i = 0; i <= k; i++) {
-                    S(k, i) = S(k + 1, i) + (z(k + 1, 1) - zb(k + 1, 1)) * L(k + 1, 1);
+                dist(--k, 0) = newDist;
+                for (int i = 0; i <= k; i++) {
+                    S(k, i) = S(k + 1, i) + (z(k + 1, 0) - zb(k + 1, 0)) * L(k + 1, 0);
                 }
-                zb(k,1) = zs(k,1) + S(k,k);
-                z(k,1) = std::round(zb(k,1));
-                y = zb(k,1) - z(k,1);
-                step(k,1) = static_cast<double>(sgn(y));
+                zb(k, 0) = zs(k, 0) + S(k, k);
+                z(k, 0) = std::round(zb(k, 0));
+                y = zb(k, 0) - z(k, 0);
+                step(k, 0) = static_cast<double>(sign(y));
             } else {
                 if (nn < m) {
-                    if (nn == 0 || newdist > s(imax,1)) {
+                    if (nn == 0 || newDist > s(imax, 0)) {
                         imax = nn;
                     }
-                    for (i = 0; i < n; i++) {
-                        zn(i,nn) = z(i,1);
+                    for (int i = 0; i < n; i++) {
+                        zn(i, nn) = z(i, 0);
                     }
-                    s(nn++,1) = newdist;
+                    s(nn++, 0) = newDist;
                 } else {
-                    if (newdist < s(imax,1)) {
-                        for (i = 0; i < n; i++) {
-                            zn(i,imax) = z(i,1);
+                    if (newDist < s(imax, 0)) {
+                        for (int i = 0; i < n; i++) {
+                            zn(i, imax) = z(i, 0);
                         }
-                        s(imax,1) = newdist;
-                        for (i = imax = 0; i < m; i++) {
-                            if (s(imax,1) < s(i,1)) {
+                        s(imax, 0) = newDist;
+                        for (int i = imax = 0; i < m; i++) {
+                            if (s(imax, 0) < s(i, 0)) {
                                 imax = i;
                             }
                         }
                     }
-                    maxdist = s(imax,1);
+                    maxDist = s(imax, 0);
                 }
-                z(0,1) += step(0,1);
-                y = zb(0,1) - z(0,1);
-                step(0,1) = -step(0,1) - static_cast<double>(sgn(step(0,1)));
+                z(0, 0) += step(0, 0);
+                y = zb(0, 0) - z(0, 0);
+                step(0, 0) = -step(0, 0) - static_cast<double>(sign(step(0, 0)));
             }
         } else {
             if (k == n - 1) {
@@ -128,91 +179,28 @@ int Lambda::search(const int &n, const int &m, const Matrix<double> &L, const Ma
             }
 
             k++;
-            z(k,1) += step(k,1);
-            y = zb(k,1) - z(k,1);
-            step(k,1) = -step(k,1) - static_cast<double>(sgn(step(k,1)));
+            z(k, 0) += step(k, 0);
+            y = zb(k, 0) - z(k, 0);
+            step(k, 0) = -step(k, 0) - static_cast<double>(sign(step(k, 0)));
         }
     }
-    for (i = 0; i < m - 1; i++) { /* sort by s */
-        for (j = i + 1; j < m; j++) {
-            if (s(i,1) < s(j,1)) {
+    for (int i = 0; i < m - 1; i++) { /* sort by s */
+        for (int j = i + 1; j < m; j++) {
+            if (s(i, 0) < s(j, 0)) {
                 continue;
             }
-            std::swap(s(i,1), s(j,1));
+            std::swap(s(i, 0), s(j, 0));
             for (k = 0; k < n; k++) {
-                std::swap(zn(k,i), zn(k,j));
+                std::swap(zn(k, i), zn(k, j));
             }
         }
     }
 
-    if (c >= LOOPMAX) {
+    if (l >= maxLoopCount) {
         std::cerr << "Search loop count overflow: " << __FILE__ << ": " << __LINE__ << '\n';
         return -1;
     }
     return 0;
-}
-
-/* lambda reduction ------------------------------------------------------------
- * reduction by lambda (ref [1]) for integer least square
- * args   : int    n      I  number of float parameters
- *          double *Q     I  covariance matrix of float parameters (n x n)
- *          double *Z     O  lambda reduction matrix (n x n)
- * return : status (0:ok,other:error)
- *-----------------------------------------------------------------------------*/
-int Lambda::lambda_reduction(const int &n, const Matrix<double> &Q, const Matrix<double> &Z) {
-    Matrix<double> L(n, n);
-    Matrix<double> D(n, 1);
-    int i;
-    int j;
-    int info;
-
-    if (n <= 0) {
-        return -1;
-    }
-
-    for (i = 0; i < n; i++) {
-        for (j = 0; j < n; j++) {
-            Z(i, j) = i == j ? 1.0 : 0.0;
-        }
-    }
-    /* LD factorization */
-    if ((info = Matrix<double>::LD_factorization(n, Q, L, D))) {
-        return info;
-    }
-    /* lambda reduction */
-    reduction(n, L, D, Z);
-
-    return 0;
-}
-
-/* mlambda search --------------------------------------------------------------
- * search by  mlambda (ref [2]) for integer least square
- * args   : int    n      I  number of float parameters
- *          int    m      I  number of fixed solutions
- *          double *a     I  float parameters (n x 1)
- *          double *Q     I  covariance matrix of float parameters (n x n)
- *          double *F     O  fixed solutions (n x m)
- *          double *s     O  sum of squared residulas of fixed solutions (1 x m)
- * return : status (0:ok,other:error)
- *-----------------------------------------------------------------------------*/
-int Lambda::lambda_search(const int &n, const int &m, const Matrix<double> &a, const Matrix<double> &Q,
-                          const Matrix<double> &F, const Matrix<double> &s) {
-    Matrix<double> L(n, n);
-    Matrix<double> D(n,1);
-    int info;
-
-    if (n <= 0 || m <= 0) {
-        return -1;
-    }
-
-    /* LD factorization */
-    if ((info = Matrix<double>::LD_factorization(n, Q, L, D))) {
-        return info;
-    }
-    /* mlambda search */
-    info = search(n, m, L, D, a, F, s);
-
-    return info;
 }
 
 /* lambda/mlambda integer least-square estimation ------------------------------
@@ -222,36 +210,58 @@ int Lambda::lambda_search(const int &n, const int &m, const Matrix<double> &a, c
  *          int    m      I  number of fixed solutions
  *          double *a     I  float parameters (n x 1)
  *          double *Q     I  covariance matrix of float parameters (n x n)
- *          double *F     O  fixed solutions (n x m)
+ *          integer *F    O  fixed solutions (n x m)
  *          double *s     O  sum of squared residulas of fixed solutions (1 x m)
  * return : status (0:ok,other:error)
  * notes  : matrix stored by column-major order (fortran convention)
  *-----------------------------------------------------------------------------*/
-int Lambda::lambda(const int &n, const int &m, const Matrix<double> &a, const Matrix<double> &Q,
-                   Matrix<double> F, const Matrix<double> &s) {
-    if (n <= 0 || m <= 0) {
-        return -1;
-    }
-    int info;
+int Lambda::lambda(const int &m, const Matrix<double> &a, Matrix<double> &Q,
+                   Matrix<double> &F, Matrix<double> &s) {
+    if ((a.getRows() != Q.getRows()) || (Q.getRows() != Q.getCols())) return -1;
+    if (m < 1) return -1;
+
+    const int n = a.getRows();
     Matrix<double> L(n, n);
-    Matrix<double> D(n, 1);
-    Matrix<double> Z(n, 1);
-    Matrix<double> z(n, 1);
+    Matrix<double> D(n, 1), z(n, 1);
     Matrix<double> E(n, m);
 
-    for (int i = 0; i < n; ++i) {
+    Matrix<double> Z(n, n);
+    Z = Matrix<double>::createIdentity(n);
+
+    for (int i = 0; i < n; i++) {
         Z(i, i) = 1.0;
     }
 
     /* LD factorization */
-    if (!(info = Matrix<double>::LD_factorization(n, Q, L, D))) {
+    if (!(factorization(Q, L, D))) {
         /* lambda reduction */
-        reduction(n, L, D, Z);
+        reduction(L, D, Z);
         z = Z.transpose() * a; /* z=Z'*a */
         /* mlambda search */
-        if (!(info = search(n, m, L, D, z, E, s))) {
-            F = Matrix<double>::solve(Z.transpose(), E); /* F=Z'\E */
+        if (!(search(m, L, D, z, E, s))) {
+            F = (Z.transpose().inverse()) * E; /* F=Z'\E */
         }
     }
-    return info;
+    return 0;
+}
+
+Matrix<int> Lambda::resolveIntegerAmbiguity(Matrix<double> &ambFloat, Matrix<double> &ambCov) {
+    // Check input
+    if (ambFloat.getRows() != ambCov.getRows() || ambFloat.getRows() != ambCov.getCols()) {
+        std::cerr << "The dimension of input does not match.\n";
+        std::cerr << "Cannot perform Ambiguity Resolution!\n";
+    } else {
+        int m = 2;
+        Matrix<double> F(ambFloat.getRows(), m);
+        Matrix<double> S(m, 1);
+        if (!lambda(m, ambFloat, ambCov, F, S)) {
+            Matrix<int> ambFixed(ambFloat.getRows(), ambFloat.getCols());
+            for (int i = 0; i < ambFloat.getRows(); i++) {
+                ambFixed(i, 0) = F(i, 0);
+            }
+            //squaredRatio = (S(0) < 1e-12) ? 9999.9 : S(1) / S(0);
+            return ambFixed;
+        }
+    }
+    return Matrix<int>();
 }

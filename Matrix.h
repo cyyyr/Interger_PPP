@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <vector>
 
 template<class T>
 class Matrix {
@@ -41,7 +42,15 @@ public:
 
     Matrix<T> operator^(int);
 
+    //explicit operator Matrix<int>() const;
+
     void swapRows(int, int);
+
+    static Matrix<T> Zero(int, int);
+
+    Matrix<T> pushBackRow(const std::vector<T> &);
+
+    Matrix<T> pushBackColumn(const std::vector<T> &);
 
     Matrix<T> transpose();
 
@@ -61,8 +70,6 @@ public:
 
     Matrix<T> inverse();
 
-    static int LD_factorization(const int &, const Matrix<T> &, Matrix<T>, Matrix<T>);
-
     [[nodiscard]] int getRows() const;
 
     void setRows(int rows);
@@ -71,13 +78,15 @@ public:
 
     void setCols(int cols);
 
-    template<typename U> friend std::ostream &operator<<(std::ostream &, const Matrix<U> &);
+    template<typename U>
+    friend std::ostream &operator<<(std::ostream &, const Matrix<U> &);
 
-    template<typename U> friend std::istream &operator>>(std::istream &, Matrix<U> &);
+    template<typename U>
+    friend std::istream &operator>>(std::istream &, Matrix<U> &);
 
 
 private:
-    int rows_, cols_;
+    int rows_{}, cols_{};
     T **p{};
 
     void allocSpace();
@@ -118,7 +127,7 @@ Matrix<T>::Matrix(int rows, int cols) : rows_(rows), cols_(cols) {
     allocSpace();
     for (int i = 0; i < rows_; ++i) {
         for (int j = 0; j < cols_; ++j) {
-            p[i][j] = 0;
+            p[i][j] = (T)0;
         }
     }
 }
@@ -280,6 +289,70 @@ std::istream &operator>>(std::istream &is, Matrix<T> &m) {
         }
     }
     return is;
+}
+
+template<class T>
+Matrix<T> Matrix<T>::pushBackRow(const std::vector<T> &row) {
+    if (this->cols_ == 1 && this->rows_ == 1) {
+        cols_ = row.size();
+        allocSpace();
+        for (int i = 0; i < this->cols_; ++i) {
+            this->p[rows_-1][i] = std::move(row[i]);
+        }
+    } else if (this->cols_ == static_cast<int>(row.size())) {
+        ++rows_;
+        T **pBuf = new T*[rows_-1];
+        for (int i = 0; i < rows_-1; ++i) {
+            pBuf[i] = new T [cols_];
+        }
+        pBuf = p;
+        allocSpace();
+        for (int j = 0; j < rows_ - 1; ++j) {
+            for (int i = 0; i < this->cols_; ++i) {
+                this->p[j][i] = pBuf[j][i];
+            }
+        }
+        for (int i = 0; i < this->cols_; ++i) {
+            this->p[rows_-1][i] = std::move(row[i]);
+        }
+        for (int i = 0; i < rows_-1; ++i) {
+            delete[] pBuf[i];
+        }
+        delete[] pBuf;
+    }
+    return *this;
+}
+
+template<class T>
+Matrix<T> Matrix<T>::pushBackColumn(const std::vector<T> &col) {
+    if (this->cols_ == 1 && this->rows_ == 1) {
+        rows_ = col.size();
+        allocSpace();
+        for (int i = 0; i < this->rows_; ++i) {
+            this->p[i][cols_-1] = std::move(col[i]);
+        }
+    } else if (this->rows_ == static_cast<int>(col.size())) {
+        ++cols_;
+        T **pBuf = new T*[rows_];
+        for (int i = 0; i < rows_; ++i) {
+            pBuf[i] = new T [cols_-1];
+        }
+        pBuf = p;
+        allocSpace();
+        for (int j = 0; j < cols_ - 1; ++j) {
+            for (int i = 0; i < this->rows_; ++i) {
+                this->p[i][j] = pBuf[i][j];
+            }
+        }
+        for (int i = 0; i < this->rows_; ++i) {
+            this->p[i][cols_-1] = std::move(col[i]);
+        }
+        for (int i = 0; i < rows_; ++i) {
+            delete[] pBuf[i];
+        }
+        delete[] pBuf;
+    }
+    return *this;
 }
 
 /* GETTERS AND SETTERS
@@ -509,41 +582,6 @@ Matrix<T> Matrix<T>::inverse() {
 }
 
 
-/* LD factorization (Q=L'*diag(D)*L) ------------------------------------------------------------------------*/
-template<class T>
-int Matrix<T>::LD_factorization(const int &n, const Matrix<T> &Q, Matrix<T> L, Matrix<T> D) {
-    int i, j, k;
-    int info = 0;
-    T a;
-
-    Matrix<T> A(Q);
-
-    for (i = n - 1; i >= 0; i--) {
-        if ((D(i, 1) = A(i, i)) <= 0.0) {
-            info = -1;
-            break;
-        }
-        a = sqrt(D(i, 1));
-        for (j = 0; j <= i; j++) {
-            L(i, j) = A(i, j) / a;
-        }
-        for (j = 0; j <= i - 1; j++) {
-            for (k = 0; k <= j; k++) {
-                A(j, k) -= L(i, k) * L(i, j);
-            }
-        }
-        for (j = 0; j <= i; j++) {
-            L(i, j) /= L(i, i);
-        }
-    }
-    if (!info) {
-        std::cerr << "LD factorization error: " << __FILE__ << ": "
-                  << __LINE__ << '\n';
-    }
-    return info;
-}
-
-
 /* PRIVATE HELPER FUNCTIONS
  ********************************/
 
@@ -567,6 +605,27 @@ Matrix<T> Matrix<T>::expHelper(const Matrix &m, int num) {
         return m * expHelper(m * m, (num - 1) / 2);
     }
 }
+
+template<class T>
+Matrix<T> Matrix<T>::Zero(int rows, int cols) {
+    Matrix<T> m(rows, cols);
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            m(i, j) = 0;
+        }
+    }
+    return m;
+}
+
+//template<class T>
+//Matrix<T>::operator Matrix<int>() const {
+//    for (int i = 0; i < this->getRows(); ++i) {
+//        for (int j = 0; j < this->getCols(); ++j) {
+//            this->p[i][j] = static_cast<int>(this->p[i][j]);
+//        }
+//    }
+//    return this;
+//}
 
 /* NON-MEMBER FUNCTIONS
  ********************************/

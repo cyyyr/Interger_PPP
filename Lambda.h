@@ -12,31 +12,32 @@
 
 class Lambda {
 private:
-    const int LOOPMAX = 10000; /* maximum count of search loop */
-private:
     template<typename T>
-    int sgn(T val) const {
-        return (T(0) < val) - (val < T(0));
+    int sign(T val) const {
+        return (T(0) < val) - (val <= T(0));
     }
 
 private:
-    static void gauss_transformation(const int &n, Matrix<double> L, Matrix<double> Z, int i, int j);
+    static int factorization(const Matrix<double> &, Matrix<double> &, Matrix<double> &);
 
-    static void permutations(const int &, Matrix<double>, Matrix<double>, int, double, Matrix<double>);
+    static void gauss_transformation(Matrix<double> &, Matrix<double> &, int, int);
 
-    static void reduction(const int &, const Matrix<double> &, const Matrix<double> &, const Matrix<double> &);
+    static void permutations(Matrix<double> &, Matrix<double> &, int, double, Matrix<double> &);
 
-    [[nodiscard]] int search(const int &, const int &, const Matrix<double> &, const Matrix<double> &,
-                             const Matrix<double> &, const Matrix<double> &, const Matrix<double> &) const;
+    static void reduction(Matrix<double> &, Matrix<double> &, Matrix<double> &);
 
-    static int lambda_reduction(const int &, const Matrix<double> &, const Matrix<double> &);
+    [[nodiscard]] int search(const int &, const Matrix<double> &, const Matrix<double> &,
+                             Matrix<double> &, Matrix<double> &, Matrix<double> &) const;
 
-    int lambda_search(const int &, const int &, const Matrix<double> &, const Matrix<double> &,
-                      const Matrix<double> &, const Matrix<double> &);
+    int lambda(const int &, const Matrix<double> &, Matrix<double> &,
+               Matrix<double> &, Matrix<double> &);
 
 public:
-    int lambda(const int &, const int &, const Matrix<double> &, const Matrix<double> &,
-               Matrix<double>, const Matrix<double> &);
+    Lambda() = default;
+
+    ~Lambda() = default;
+
+    Matrix<int> resolveIntegerAmbiguity(Matrix<double> &ambFloat, Matrix<double>& ambCov);
 
 
 };
