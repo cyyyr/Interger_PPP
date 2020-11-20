@@ -54,10 +54,12 @@ void Lambda::gauss_transformation(Matrix<double> &L, Matrix<double> &Z, int i, i
     int n = L.getRows();
     int mu = (int) std::round(L(i, j));
 
-    for (int k = i; k < n; k++)
-        L(k, j) -= (double) mu * L(k, i);
-    for (int k = 0; k < n; k++)
-        Z(k, j) -= (double) mu * Z(k, i);
+    if (mu != 0) {
+        for (int k = i; k < n; k++)
+            L(k, j) -= (double) mu * L(k, i);
+        for (int k = 0; k < n; k++)
+            Z(k, j) -= (double) mu * Z(k, i);
+    }
 }
 
 
@@ -65,12 +67,16 @@ void Lambda::permutations(Matrix<double> &L, Matrix<double> &D, int j, double de
 
     const int n = L.getRows();
     double eta = D(j, 0) / del;
+//    std::cout << "eta = " << eta << '\n';
     double lam = D(j + 1, 0) * L(j + 1, j) / del;
+//    std::cout << "lam = " << lam << '\n';
     D(j, 0) = eta * D(j + 1, 0);
     D(j + 1, 0) = del;
     for (int k = 0; k <= j - 1; k++) {
-        L(j, k) = -L(j + 1, j) * L(j, k) + L(j + 1, k);
-        L(j + 1, k) = eta * L(j, k) + lam * L(j + 1, k);
+        double temp1 = L(j, k);
+        double temp2 = L(j + 1, k);
+        L(j, k) = -L(j + 1, j)*temp1 + temp2;
+        L(j + 1, k) = eta*temp1 + lam*temp2;
     }
     L(j + 1, j) = lam;
     for (int k = j + 2; k < n; k++)
@@ -94,10 +100,15 @@ void Lambda::reduction(Matrix<double> &L, Matrix<double> &D, Matrix<double> &Z) 
         double del = D(j, 0) + L(j + 1, j) * L(j + 1, j) * D(j + 1, 0);
         std::cout << "j = " << j << ", k = " << k << ", del = " << del << '\n';
         if (del + 1E-6 < D(j + 1, 0)) { /* compared considering numerical error */
+//            for (int ii = 0; ii < n; ++ii)
+//                std::cout << "D(" << ii << ") = " << D(ii, 0) << "\n";
+//            std::cout << '\n';
+//            std::cout << "if:\t" << "j = " << j << ", k = " << k << ", del = " << del << '\n';
             permutations(L, D, j, del, Z);
             k = j;
             j = n - 2;
         } else {
+            std::cout << "else:\t" << "j = " << j << ", k = " << k << ", del = " << del << '\n';
             j--;
         }
     }
