@@ -42,11 +42,7 @@ public:
 
     Matrix<T> operator^(int);
 
-    //explicit operator Matrix<int>() const;
-
     void swapRows(int, int);
-
-    static Matrix<T> Zero(int, int);
 
     Matrix<T> pushBackRow(const std::vector<T> &);
 
@@ -55,11 +51,6 @@ public:
     Matrix<T> transpose();
 
     static Matrix<T> createIdentity(int);
-
-    static Matrix<T> solve(Matrix<T>, Matrix<T>);
-
-    // functions on vectors
-    static T dotProduct(Matrix<T>, Matrix<T>);
 
     // functions on augmented matrices
     static Matrix<T> augment(Matrix<T>, Matrix<T>);
@@ -77,6 +68,8 @@ public:
     [[nodiscard]] int getCols() const;
 
     void setCols(int cols);
+
+    explicit operator int() const;
 
     template<typename U>
     friend std::ostream &operator<<(std::ostream &, const Matrix<U> &);
@@ -111,12 +104,6 @@ Matrix<T> operator*(T, const Matrix<T> &);
 
 template<class T>
 Matrix<T> operator/(const Matrix<T> &, T);
-
-//template<class T>
-//std::ostream &operator<<(std::ostream &, const Matrix<T> &);
-//
-//template<class T>
-//std::istream &operator>>(std::istream &, Matrix<T> &);
 
 #endif //ILS_PPP_MATRIX_H
 
@@ -355,6 +342,11 @@ Matrix<T> Matrix<T>::pushBackColumn(const std::vector<T> &col) {
     return *this;
 }
 
+template<class T>
+Matrix<T>::operator int() const {
+    return **p;
+}
+
 /* GETTERS AND SETTERS
  ********************************/
 
@@ -394,56 +386,6 @@ Matrix<T> Matrix<T>::createIdentity(int size) {
         }
     }
     return temp;
-}
-
-template<class T>
-Matrix<T> Matrix<T>::solve(Matrix A, Matrix b) { //A*x=b
-    // Gaussian elimination
-    for (int i = 0; i < A.rows_; ++i) {
-        if (A.p[i][i] == 0) {
-            // pivot - 0 -> throw error
-            throw std::domain_error(
-                    "Error: the coefficient matrix has 0 as a pivot. Please fix the input and try again.");
-        }
-        for (int j = i + 1; j < A.rows_; ++j) {
-            for (int k = i + 1; k < A.cols_; ++k) {
-                A.p[j][k] -= A.p[i][k] * (A.p[j][i] / A.p[i][i]);
-                if (A.p[j][k] < EPS && A.p[j][k] > -1 * EPS)
-                    A.p[j][k] = 0;
-            }
-            b.p[j][0] -= b.p[i][0] * (A.p[j][i] / A.p[i][i]);
-            if (A.p[j][0] < EPS && A.p[j][0] > -1 * EPS)
-                A.p[j][0] = 0;
-            A.p[j][i] = 0;
-        }
-    }
-
-    // Back substitution
-    Matrix<T> x(b.rows_, 1);
-    x.p[x.rows_ - 1][0] = b.p[x.rows_ - 1][0] / A.p[x.rows_ - 1][x.rows_ - 1];
-    if (x.p[x.rows_ - 1][0] < EPS && x.p[x.rows_ - 1][0] > -1 * EPS)
-        x.p[x.rows_ - 1][0] = 0;
-    for (int i = x.rows_ - 2; i >= 0; --i) {
-        T sum = 0.0;
-        for (int j = i + 1; j < x.rows_; ++j) {
-            sum += A.p[i][j] * x.p[j][0];
-        }
-        x.p[i][0] = (b.p[i][0] - sum) / A.p[i][i];
-        if (x.p[i][0] < EPS && x.p[i][0] > -1 * EPS)
-            x.p[i][0] = 0;
-    }
-
-    return x;
-}
-
-// functions on VECTORS
-template<class T>
-[[maybe_unused]] T Matrix<T>::dotProduct(Matrix a, Matrix b) {
-    double sum = 0;
-    for (int i = 0; i < a.rows_; ++i) {
-        sum += (a(i, 0) * b(i, 0));
-    }
-    return sum;
 }
 
 // functions on AUGMENTED matrices
@@ -605,27 +547,6 @@ Matrix<T> Matrix<T>::expHelper(const Matrix &m, int num) {
         return m * expHelper(m * m, (num - 1) / 2);
     }
 }
-
-template<class T>
-Matrix<T> Matrix<T>::Zero(int rows, int cols) {
-    Matrix<T> m(rows, cols);
-    for (int i = 0; i < rows; ++i) {
-        for (int j = 0; j < cols; ++j) {
-            m(i, j) = 0;
-        }
-    }
-    return m;
-}
-
-//template<class T>
-//Matrix<T>::operator Matrix<int>() const {
-//    for (int i = 0; i < this->getRows(); ++i) {
-//        for (int j = 0; j < this->getCols(); ++j) {
-//            this->p[i][j] = static_cast<int>(this->p[i][j]);
-//        }
-//    }
-//    return this;
-//}
 
 /* NON-MEMBER FUNCTIONS
  ********************************/

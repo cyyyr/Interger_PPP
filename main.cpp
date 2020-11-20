@@ -6,13 +6,6 @@
 #include "Lambda.h"
 
 int main() {
-    //TestILSMethod();
-    /* 1) Чтение из файла (см. Coursera)
-     * 2) МНК
-     * 3) Исправление данных
-     * 4) Тест система
-     * 5) График
-    */
 
     Matrix<double> floatAmbiguity;
     floatAmbiguity.pushBackColumn({-9.75792, 22.1086, -1.98908, 3.36186, 23.2148, 7.75073});
@@ -29,24 +22,9 @@ int main() {
     Lambda LambdaResolution;
     Matrix<int> integerAmbiguity(floatAmbiguity.getRows(), 1);
     integerAmbiguity =
-            LambdaResolution.resolveIntegerAmbiguity(floatAmbiguity, floatAmbCovariance);
+            LambdaResolution.resolveAmbiguityWithILS(floatAmbiguity, floatAmbCovariance);
 
-    std::cout << "Float Ambiguity: \n" << floatAmbiguity.transpose() << '\n';
-    std::cout << "Integer Ambiguity: \n" << integerAmbiguity.transpose() << '\n';
+    std::cout << "Float Ambiguity: \n" << floatAmbiguity.transpose();
+    std::cout << "Integer Ambiguity: \n" << integerAmbiguity.transpose();
 
-//    std::cout << floatAmbiguity(0,0) << ' ' << floatAmbiguity(0,1) << '\n'
-//              << floatAmbiguity(1,0) << ' ' << floatAmbiguity(1,1) << '\n'
-//              << floatAmbiguity(2,0) << ' ' << floatAmbiguity(2,1) << '\n'
-//              << floatAmbiguity(3,0) << ' ' << floatAmbiguity(3,1) << '\n'
-//              << floatAmbiguity(4,0) << ' ' << floatAmbiguity(4,1) << '\n'
-//              << floatAmbiguity(5,0) << ' ' << floatAmbiguity(5,1) << '\n';
-//
-//    std::cout << "\n\n\n";
-//
-//    std::cout << floatAmbCovariance(0,0) << ' ' << floatAmbCovariance(0,1) << ' ' << floatAmbCovariance(0,2) << ' '
-//              << floatAmbCovariance(0,3) << ' ' << floatAmbCovariance(0,4) << ' ' << floatAmbCovariance(0,5) << '\n'
-//            << floatAmbCovariance(5,0) << ' ' << floatAmbCovariance(5,1) << ' ' << floatAmbCovariance(5,2) << ' '
-//            << floatAmbCovariance(5,3) << ' ' << floatAmbCovariance(5,4) << ' ' << floatAmbCovariance(5,5) << '\n';
-
-    //std::cin.get();
 }
