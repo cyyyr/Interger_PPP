@@ -5,25 +5,12 @@
 #include <utility>
 #include <iostream>
 #include "Lambda.h"
-/*
- * TODO: 0) расположить методы в правильном порядке (см. статью)
- *       1) убрать лишнее, добавить недостающее
- *       2) добиться правильной работы программы
- *       3) написать петрову
- *       4) убрать излишек в matrix.h/cpp
- *       5) ???
-*/
 
-
-/* L'DL factorization (Q=L'*diag(D)*L) ------------------------------------------------------------------------*/
 int Lambda::factorization(const Matrix<double> &Q, Matrix<double> &L, Matrix<double> &D) {
 
     int n = Q.getRows();
     Matrix<double> A(Q.getRows(), Q.getCols());
     A = Q;
-//    L = Matrix<double>::Zero(n, n);
-//    D = Matrix<double>::Zero(n, 1);
-
 
     for (int i = n - 1; i >= 0; i--) {
         D(i, 0) = A(i, i);
@@ -48,7 +35,6 @@ int Lambda::factorization(const Matrix<double> &Q, Matrix<double> &L, Matrix<dou
     return 0;
 }
 
-/*Integer Gauss transformations (Z_i_j = I - mu*e_i*e'_j ; where mu is an integer ---------------*/
 void Lambda::gauss_transformation(Matrix<double> &L, Matrix<double> &Z, int i, int j) {
 
     int n = L.getRows();
@@ -67,9 +53,7 @@ void Lambda::permutations(Matrix<double> &L, Matrix<double> &D, int j, double de
 
     const int n = L.getRows();
     double eta = D(j, 0) / del;
-//    std::cout << "eta = " << eta << '\n';
     double lam = D(j + 1, 0) * L(j + 1, j) / del;
-//    std::cout << "lam = " << lam << '\n';
     D(j, 0) = eta * D(j + 1, 0);
     D(j + 1, 0) = del;
     for (int k = 0; k <= j - 1; k++) {
@@ -85,7 +69,6 @@ void Lambda::permutations(Matrix<double> &L, Matrix<double> &D, int j, double de
         std::swap(Z(k, j), Z(k, j + 1));
 }
 
-/* lambda reduction (z=Z'*a, Qz=Z'*Q*Z=L'*diag(D)*L) (ref.[1]) ---------------*/
 void Lambda::reduction(Matrix<double> &L, Matrix<double> &D, Matrix<double> &Z) {
 
     int n = L.getRows();
@@ -98,34 +81,16 @@ void Lambda::reduction(Matrix<double> &L, Matrix<double> &D, Matrix<double> &Z) 
             }
         }
         double del = D(j, 0) + L(j + 1, j) * L(j + 1, j) * D(j + 1, 0);
-        std::cout << "j = " << j << ", k = " << k << ", del = " << del << '\n';
         if (del + 1E-6 < D(j + 1, 0)) { /* compared considering numerical error */
-//            for (int ii = 0; ii < n; ++ii)
-//                std::cout << "D(" << ii << ") = " << D(ii, 0) << "\n";
-//            std::cout << '\n';
-//            std::cout << "if:\t" << "j = " << j << ", k = " << k << ", del = " << del << '\n';
             permutations(L, D, j, del, Z);
             k = j;
             j = n - 2;
         } else {
-            std::cout << "else:\t" << "j = " << j << ", k = " << k << ", del = " << del << '\n';
             j--;
         }
     }
 }
 
-/* modified lambda (mlambda) search --------------------------------------------------------------
- * TODO: CHECK UNEXPECTED INPUT
- * args   : int    m      I  number of fixed solutions
- *          double &L     I  unit lower triangular matrix (n x n)
- *          double &D     I  diagonal matrix (n x 1)
- *          double &zs    I  (n x 1)
- *          double &zn    I  (n x m)
- *          double &s     O  sum of squared residulas of fixed solutions (1 x m)
- * return : status (0:ok,other:error)
- *
- * int    n    is a number of float parameters
- *-----------------------------------------------------------------------------*/
 int Lambda::search(const int &m, const Matrix<double> &L,
                    const Matrix<double> &D, Matrix<double> &zs,
                    Matrix<double> &zn, Matrix<double> &s) const {
@@ -214,18 +179,6 @@ int Lambda::search(const int &m, const Matrix<double> &L,
     return 0;
 }
 
-/* lambda/mlambda integer least-square estimation ------------------------------
- * integer least-square estimation. reduction is performed by lambda (ref.[1]),
- * and search by mlambda (ref.[2]).
- * args   : int    n      I  number of float parameters
- *          int    m      I  number of fixed solutions
- *          double *a     I  float parameters (n x 1)
- *          double *Q     I  covariance matrix of float parameters (n x n)
- *          integer *F    O  fixed solutions (n x m)
- *          double *s     O  sum of squared residulas of fixed solutions (1 x m)
- * return : status (0:ok,other:error)
- * notes  : matrix stored by column-major order (fortran convention)
- *-----------------------------------------------------------------------------*/
 int Lambda::lambda(const int &m, const Matrix<double> &a, Matrix<double> &Q,
                    Matrix<double> &F, Matrix<double> &s) {
     if ((a.getRows() != Q.getRows()) || (Q.getRows() != Q.getCols())) return -1;
@@ -243,35 +196,33 @@ int Lambda::lambda(const int &m, const Matrix<double> &a, Matrix<double> &Q,
         Z(i, i) = 1.0;
     }
 
-    /* LD factorization */
+    // LD factorization
     if (!(factorization(Q, L, D))) {
-        /* lambda reduction */
+        // lambda reduction
         reduction(L, D, Z);
         z = Z.transpose() * a; /* z=Z'*a */
-        /* mlambda search */
+        // mlambda
         if (!(search(m, L, D, z, E, s))) {
             F = (Z.transpose().inverse()) * E; /* F=Z'\E */
+            }
         }
-    }
     return 0;
 }
 
-Matrix<int> Lambda::resolveIntegerAmbiguity(Matrix<double> &ambFloat, Matrix<double> &ambCov) {
-    // Check input
-    if (ambFloat.getRows() != ambCov.getRows() || ambFloat.getRows() != ambCov.getCols()) {
-        std::cerr << "The dimension of input does not match.\n";
-        std::cerr << "Cannot perform Ambiguity Resolution!\n";
+Matrix<int> Lambda::resolveAmbiguityWithILS(Matrix<double> &floatAmbiguity, Matrix<double> &ambiguityCovarianceMatrix) {
+    if (floatAmbiguity.getRows() != ambiguityCovarianceMatrix.getRows() ||
+        floatAmbiguity.getRows() != ambiguityCovarianceMatrix.getCols()) {
+        std::cerr << "The dimensions of float ambiguity matrix and ambiguity covariance matrix does not match.\n";
     } else {
-        int m = 2;
-        Matrix<double> F(ambFloat.getRows(), m);
+        const int m = 2; // dimensions of result matrices
+        Matrix<double> F(floatAmbiguity.getRows(), m);
         Matrix<double> S(m, 1);
-        if (!lambda(m, ambFloat, ambCov, F, S)) {
-            Matrix<int> ambFixed(ambFloat.getRows(), ambFloat.getCols());
-            for (int i = 0; i < ambFloat.getRows(); i++) {
-                ambFixed(i, 0) = F(i, 0);
+        if (!lambda(m, floatAmbiguity, ambiguityCovarianceMatrix, F, S)) {
+            Matrix<int> ambInt(floatAmbiguity.getRows(), floatAmbiguity.getCols());
+            for (int i = 0; i < floatAmbiguity.getRows(); i++) {
+                ambInt(i, 0) = std::round(F(i, 0));
             }
-            //squaredRatio = (S(0) < 1e-12) ? 9999.9 : S(1) / S(0);
-            return ambFixed;
+            return ambInt;
         }
     }
     return Matrix<int>();
