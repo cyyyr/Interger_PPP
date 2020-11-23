@@ -16,7 +16,7 @@ class Matrix {
 public:
     Matrix<T>(int, int);
 
-    Matrix<T>(T **, int, int);
+    [[maybe_unused]] Matrix<T>(T **, int, int);
 
     Matrix<T>();
 
@@ -69,14 +69,11 @@ public:
 
     void setCols(int cols);
 
-    explicit operator int() const;
-
     template<typename U>
     friend std::ostream &operator<<(std::ostream &, const Matrix<U> &);
 
     template<typename U>
     friend std::istream &operator>>(std::istream &, Matrix<U> &);
-
 
 private:
     int rows_{}, cols_{};
@@ -114,13 +111,13 @@ Matrix<T>::Matrix(int rows, int cols) : rows_(rows), cols_(cols) {
     allocSpace();
     for (int i = 0; i < rows_; ++i) {
         for (int j = 0; j < cols_; ++j) {
-            p[i][j] = (T)0;
+            p[i][j] = (T) 0;
         }
     }
 }
 
 template<class T>
-Matrix<T>::Matrix(T **a, int rows, int cols) : rows_(rows), cols_(cols) {
+[[maybe_unused]] Matrix<T>::Matrix(T **a, int rows, int cols) : rows_(rows), cols_(cols) {
     allocSpace();
     for (int i = 0; i < rows_; ++i) {
         for (int j = 0; j < cols_; ++j) {
@@ -152,7 +149,6 @@ Matrix<T>::Matrix(const Matrix &m) : rows_(m.rows_), cols_(m.cols_) {
         }
     }
 }
-
 
 template<class T>
 Matrix<T> &Matrix<T>::operator=(const Matrix &m) {
@@ -281,28 +277,28 @@ std::istream &operator>>(std::istream &is, Matrix<T> &m) {
 template<class T>
 Matrix<T> Matrix<T>::pushBackRow(const std::vector<T> &row) {
     if (this->cols_ == 1 && this->rows_ == 1) {
-        cols_ = row.size();
+        cols_ = static_cast<int>(row.size());
         allocSpace();
         for (int i = 0; i < this->cols_; ++i) {
-            this->p[rows_-1][i] = std::move(row[i]);
+            this->p[rows_ - 1][i] = std::move(row[i]);
         }
     } else if (this->cols_ == static_cast<int>(row.size())) {
         ++rows_;
-        T **pBuf = new T*[rows_-1];
-        for (int i = 0; i < rows_-1; ++i) {
-            pBuf[i] = new T [cols_];
+        T **pBuf = new T *[rows_ - 1];
+        for (int i = 0; i < rows_ - 1; ++i) {
+            pBuf[i] = new T[cols_];
         }
         pBuf = p;
         allocSpace();
         for (int j = 0; j < rows_ - 1; ++j) {
             for (int i = 0; i < this->cols_; ++i) {
-                this->p[j][i] = pBuf[j][i];
+                this->p[j][i] = std::move(pBuf[j][i]);
             }
         }
         for (int i = 0; i < this->cols_; ++i) {
-            this->p[rows_-1][i] = std::move(row[i]);
+            this->p[rows_ - 1][i] = std::move(row[i]);
         }
-        for (int i = 0; i < rows_-1; ++i) {
+        for (int i = 0; i < rows_ - 1; ++i) {
             delete[] pBuf[i];
         }
         delete[] pBuf;
@@ -313,26 +309,26 @@ Matrix<T> Matrix<T>::pushBackRow(const std::vector<T> &row) {
 template<class T>
 Matrix<T> Matrix<T>::pushBackColumn(const std::vector<T> &col) {
     if (this->cols_ == 1 && this->rows_ == 1) {
-        rows_ = col.size();
+        rows_ = static_cast<int>(col.size());
         allocSpace();
         for (int i = 0; i < this->rows_; ++i) {
-            this->p[i][cols_-1] = std::move(col[i]);
+            this->p[i][cols_ - 1] = std::move(col[i]);
         }
     } else if (this->rows_ == static_cast<int>(col.size())) {
         ++cols_;
-        T **pBuf = new T*[rows_];
+        T **pBuf = new T *[rows_];
         for (int i = 0; i < rows_; ++i) {
-            pBuf[i] = new T [cols_-1];
+            pBuf[i] = new T[cols_ - 1];
         }
         pBuf = p;
         allocSpace();
         for (int j = 0; j < cols_ - 1; ++j) {
             for (int i = 0; i < this->rows_; ++i) {
-                this->p[i][j] = pBuf[i][j];
+                this->p[i][j] = std::move(pBuf[i][j]);
             }
         }
         for (int i = 0; i < this->rows_; ++i) {
-            this->p[i][cols_-1] = std::move(col[i]);
+            this->p[i][cols_ - 1] = std::move(col[i]);
         }
         for (int i = 0; i < rows_; ++i) {
             delete[] pBuf[i];
@@ -340,11 +336,6 @@ Matrix<T> Matrix<T>::pushBackColumn(const std::vector<T> &col) {
         delete[] pBuf;
     }
     return *this;
-}
-
-template<class T>
-Matrix<T>::operator int() const {
-    return **p;
 }
 
 /* GETTERS AND SETTERS

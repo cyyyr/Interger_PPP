@@ -26,43 +26,43 @@ private:
 
     static void permutations(Matrix<double> &, Matrix<double> &, int, double, Matrix<double> &);
 
-    /* lambda reduction (z=Z'*a, Qz=Z'*Q*Z=L'*diag(D)*L) -------------------------*/
+    /* lambda reduction (z = Z' * a, Qz = Z' * Q * Z = L' * diag(D) * L) --------------*/
     static void reduction(Matrix<double> &, Matrix<double> &, Matrix<double> &);
 
-    /* modified lambda (mlambda) search ---------------------------------------------------
-    * args   : int    m      I  number of fixed solutions
-    *          double &L     I  unit lower triangular matrix (n x n)
-    *          double &D     I  diagonal matrix (n x 1)
-    *          double &zs    I  (n x 1)
-    *          double &zn    I  (n x m)
-    *          double &s     O  sum of squared residulas of fixed solutions (1 x m)
-    * return : status (0:ok,other:error)
+    /* mlambda search -------------------------------------------------------------------
+    * input  : const int &m     number of fixed solutions
+    *          const double &L  unit lower triangular matrix [n x n]
+    *          const double &D  diagonal matrix [n x 1]
+    *          double &zs       [n x 1]
+    *          double &zn       [n x m]
+    * output:  double &s        sum of squared residuals of fixed solutions [m x 1]
+    * return : status : error if not 0
     *
     * int    n    is a number of float parameters
     *-----------------------------------------------------------------------------------*/
     [[nodiscard]] int search(const int &, const Matrix<double> &, const Matrix<double> &,
-                             Matrix<double> &, Matrix<double> &, Matrix<double> &) const;
+                             Matrix<double> &, Matrix<double> &, Matrix<double> &);
 
     /* lambda/mlambda integer least-square estimation ------------------------------
     * integer least-square estimation. reduction is performed by lambda,
     * and search by mlambda.
-    * args   : int    n      I  number of float parameters
-    *          int    m      I  number of fixed solutions
-    *          double *a     I  float parameters (n x 1)
-    *          double *Q     I  covariance matrix of float parameters (n x n)
-    *          double *F    O  fixed solutions (n x m)
-    *          double *s     O  sum of squared residulas of fixed solutions (1 x m)
-    * return : status (0:ok,other:error)
+    * input  : const int &m      number of fixed solutions
+    *          const double &a   float parameters [n x 1]
+    *          const double &Q   covariance matrix of float parameters [n x n]
+    * output :       double &F   fixed solutions [n x m]
+    *                double &s   sum of squared residuals of fixed solutions [m x 1]
+    * return : status : error if not 0
     *-----------------------------------------------------------------------------*/
-    int lambda(const int &, const Matrix<double> &, Matrix<double> &,
-               Matrix<double> &, Matrix<double> &);
+    [[nodiscard]] int lambda(const int &, const Matrix<double> &, Matrix<double> &,
+                             Matrix<double> &, Matrix<double> &);
 
 public:
     Lambda() = default;
 
     ~Lambda() = default;
 
-    Matrix<int> resolveAmbiguityWithILS(Matrix<double> &floatAmbiguity, Matrix<double>& ambiguityCovarianceMatrix);
+
+    Matrix<int> computeIntegerSolution(Matrix<double> &floatAmbiguity, Matrix<double> &ambiguityCovarianceMatrix);
 
 
 };

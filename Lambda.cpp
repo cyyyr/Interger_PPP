@@ -9,8 +9,7 @@
 int Lambda::factorization(const Matrix<double> &Q, Matrix<double> &L, Matrix<double> &D) {
 
     int n = Q.getRows();
-    Matrix<double> A(Q.getRows(), Q.getCols());
-    A = Q;
+    Matrix<double> A(Q);
 
     for (int i = n - 1; i >= 0; i--) {
         D(i, 0) = A(i, i);
@@ -59,8 +58,8 @@ void Lambda::permutations(Matrix<double> &L, Matrix<double> &D, int j, double de
     for (int k = 0; k <= j - 1; k++) {
         double temp1 = L(j, k);
         double temp2 = L(j + 1, k);
-        L(j, k) = -L(j + 1, j)*temp1 + temp2;
-        L(j + 1, k) = eta*temp1 + lam*temp2;
+        L(j, k) = -L(j + 1, j) * temp1 + temp2;
+        L(j + 1, k) = eta * temp1 + lam * temp2;
     }
     L(j + 1, j) = lam;
     for (int k = j + 2; k < n; k++)
@@ -93,7 +92,7 @@ void Lambda::reduction(Matrix<double> &L, Matrix<double> &D, Matrix<double> &Z) 
 
 int Lambda::search(const int &m, const Matrix<double> &L,
                    const Matrix<double> &D, Matrix<double> &zs,
-                   Matrix<double> &zn, Matrix<double> &s) const {
+                   Matrix<double> &zn, Matrix<double> &s) {
     const int maxLoopCount = 10000;
     int n = L.getRows();
     int nn{0}, imax{0}, l;
@@ -204,12 +203,12 @@ int Lambda::lambda(const int &m, const Matrix<double> &a, Matrix<double> &Q,
         // mlambda
         if (!(search(m, L, D, z, E, s))) {
             F = (Z.transpose().inverse()) * E; /* F=Z'\E */
-            }
         }
+    }
     return 0;
 }
 
-Matrix<int> Lambda::resolveAmbiguityWithILS(Matrix<double> &floatAmbiguity, Matrix<double> &ambiguityCovarianceMatrix) {
+Matrix<int> Lambda::computeIntegerSolution(Matrix<double> &floatAmbiguity, Matrix<double> &ambiguityCovarianceMatrix) {
     if (floatAmbiguity.getRows() != ambiguityCovarianceMatrix.getRows() ||
         floatAmbiguity.getRows() != ambiguityCovarianceMatrix.getCols()) {
         std::cerr << "The dimensions of float ambiguity matrix and ambiguity covariance matrix does not match.\n";
@@ -220,7 +219,7 @@ Matrix<int> Lambda::resolveAmbiguityWithILS(Matrix<double> &floatAmbiguity, Matr
         if (!lambda(m, floatAmbiguity, ambiguityCovarianceMatrix, F, S)) {
             Matrix<int> ambInt(floatAmbiguity.getRows(), floatAmbiguity.getCols());
             for (int i = 0; i < floatAmbiguity.getRows(); i++) {
-                ambInt(i, 0) = std::round(F(i, 0));
+                ambInt(i, 0) = static_cast<int>(std::round(F(i, 0)));
             }
             return ambInt;
         }
