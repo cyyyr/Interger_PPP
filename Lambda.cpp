@@ -6,6 +6,8 @@
 #include <iostream>
 #include "Lambda.h"
 
+const double ambiguityFixingThreshold = 6.0; //set by user
+
 int Lambda::factorization(const Matrix<double> &Q, Matrix<double> &L, Matrix<double> &D) {
 
     int n = Q.getRows();
@@ -221,7 +223,13 @@ Matrix<int> Lambda::computeIntegerSolution(Matrix<double> &floatAmbiguity, Matri
             for (int i = 0; i < floatAmbiguity.getRows(); i++) {
                 ambInt(i, 0) = static_cast<int>(std::round(F(i, 0)));
             }
-            return ambInt;
+            double squaredRatio = (S(0, 0) < 1e-12) ? 999.9 : S(1, 0) / S(0, 0);
+            if (squaredRatio < ambiguityFixingThreshold)
+                return ambInt;
+            else {
+                std::cerr << "Integer ambiguity solution validation error\n";
+                return Matrix<int>();
+            }
         }
     }
     return Matrix<int>();
