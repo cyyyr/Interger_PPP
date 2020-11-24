@@ -40,8 +40,6 @@ public:
 
     Matrix<T> &operator/=(T);
 
-    Matrix<T> operator^(int);
-
     void swapRows(int, int);
 
     Matrix<T> pushBackRow(const std::vector<T> &);
@@ -80,8 +78,6 @@ private:
     T **p{};
 
     void allocSpace();
-
-    Matrix<T> expHelper(const Matrix<T> &, int);
 };
 
 template<class T>
@@ -226,12 +222,6 @@ Matrix<T> &Matrix<T>::operator/=(T num) {
         }
     }
     return *this;
-}
-
-template<class T>
-Matrix<T> Matrix<T>::operator^(int num) {
-    Matrix temp(*this);
-    return expHelper(temp, num);
 }
 
 template<class T>
@@ -523,19 +513,6 @@ void Matrix<T>::allocSpace() {
     p = new T *[rows_];
     for (int i = 0; i < rows_; ++i) {
         p[i] = new T[cols_];
-    }
-}
-
-template<class T>
-Matrix<T> Matrix<T>::expHelper(const Matrix &m, int num) {
-    if (num == 0) {
-        return createIdentity(m.rows_);
-    } else if (num == 1) {
-        return m;
-    } else if (num % 2 == 0) {  // num is even
-        return expHelper(m * m, num / 2);
-    } else {                    // num is odd
-        return m * expHelper(m * m, (num - 1) / 2);
     }
 }
 

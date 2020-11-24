@@ -22,7 +22,7 @@ private:
     static int factorization(const Matrix<double> &, Matrix<double> &, Matrix<double> &);
 
     /*Integer Gauss transformations (Z_i_j = I - mu*e_i*e'_j ; where mu is an integer -----*/
-    static void gauss_transformation(Matrix<double> &, Matrix<double> &, int, int);
+    static void gaussTransformation(Matrix<double> &, Matrix<double> &, int, int);
 
     static void permutations(Matrix<double> &, Matrix<double> &, int, double, Matrix<double> &);
 
@@ -55,6 +55,9 @@ private:
     *-----------------------------------------------------------------------------*/
     [[nodiscard]] int lambda(const int &, const Matrix<double> &, Matrix<double> &,
                              Matrix<double> &, Matrix<double> &);
+
+    /* validation of the fixed solution */
+    static int validateSolution(const Matrix<double> &S);
 
 public:
     Lambda() = default;

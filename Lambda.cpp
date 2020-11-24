@@ -6,8 +6,6 @@
 #include <iostream>
 #include "Lambda.h"
 
-const double ambiguityFixingThreshold = 6.0; //set by user
-
 int Lambda::factorization(const Matrix<double> &Q, Matrix<double> &L, Matrix<double> &D) {
 
     int n = Q.getRows();
@@ -36,7 +34,7 @@ int Lambda::factorization(const Matrix<double> &Q, Matrix<double> &L, Matrix<dou
     return 0;
 }
 
-void Lambda::gauss_transformation(Matrix<double> &L, Matrix<double> &Z, int i, int j) {
+void Lambda::gaussTransformation(Matrix<double> &L, Matrix<double> &Z, int i, int j) {
 
     int n = L.getRows();
     int mu = (int) std::round(L(i, j));
@@ -49,7 +47,7 @@ void Lambda::gauss_transformation(Matrix<double> &L, Matrix<double> &Z, int i, i
     }
 }
 
-
+/* TODO: try to make Z integer Matrix according to LAMBDA algorithm. */
 void Lambda::permutations(Matrix<double> &L, Matrix<double> &D, int j, double del, Matrix<double> &Z) {
 
     const int n = L.getRows();
@@ -70,6 +68,7 @@ void Lambda::permutations(Matrix<double> &L, Matrix<double> &D, int j, double de
         std::swap(Z(k, j), Z(k, j + 1));
 }
 
+/* TODO: try to implement modified reduction. Compare speed with profiler. */
 void Lambda::reduction(Matrix<double> &L, Matrix<double> &D, Matrix<double> &Z) {
 
     int n = L.getRows();
@@ -78,7 +77,7 @@ void Lambda::reduction(Matrix<double> &L, Matrix<double> &D, Matrix<double> &Z) 
     while (j >= 0) {
         if (j <= k) {
             for (int i = j + 1; i < n; i++) {
-                gauss_transformation(L, Z, i, j);
+                gaussTransformation(L, Z, i, j);
             }
         }
         double del = D(j, 0) + L(j + 1, j) * L(j + 1, j) * D(j + 1, 0);
@@ -210,6 +209,11 @@ int Lambda::lambda(const int &m, const Matrix<double> &a, Matrix<double> &Q,
     return 0;
 }
 
+int Lambda::validateSolution(const Matrix<double> &S) {
+    const double ambiguityFixingThreshold = 6.0; //set by user
+    return (((S(0, 0) < 1e-12) ? 999.9 : S(1, 0) / S(0, 0)) < ambiguityFixingThreshold);
+}
+
 Matrix<int> Lambda::computeIntegerSolution(Matrix<double> &floatAmbiguity, Matrix<double> &ambiguityCovarianceMatrix) {
     if (floatAmbiguity.getRows() != ambiguityCovarianceMatrix.getRows() ||
         floatAmbiguity.getRows() != ambiguityCovarianceMatrix.getCols()) {
@@ -223,8 +227,7 @@ Matrix<int> Lambda::computeIntegerSolution(Matrix<double> &floatAmbiguity, Matri
             for (int i = 0; i < floatAmbiguity.getRows(); i++) {
                 ambInt(i, 0) = static_cast<int>(std::round(F(i, 0)));
             }
-            double squaredRatio = (S(0, 0) < 1e-12) ? 999.9 : S(1, 0) / S(0, 0);
-            if (squaredRatio < ambiguityFixingThreshold)
+            if (validateSolution(S))
                 return ambInt;
             else {
                 std::cerr << "Integer ambiguity solution validation error\n";
