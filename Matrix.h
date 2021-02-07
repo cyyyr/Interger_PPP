@@ -337,12 +337,12 @@ inline int Matrix<T>::getRows() const {
 }
 
 template<class T>
-inline void Matrix<T>::setRows(int rows) {
+[[maybe_unused]] inline void Matrix<T>::setRows(int rows) {
     rows_ = rows;
 }
 
 template<class T>
-[[maybe_unused]] inline int Matrix<T>::getCols() const {
+inline int Matrix<T>::getCols() const {
     return cols_;
 }
 
