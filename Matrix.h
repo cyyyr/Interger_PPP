@@ -59,13 +59,13 @@ public:
 
     Matrix<T> inverse();
 
-    [[nodiscard]] int getRows() const;
+    [[nodiscard]] inline int getRows() const;
 
-    void setRows(int rows);
+    [[maybe_unused]] inline void setRows(int rows);
 
-    [[nodiscard]] int getCols() const;
+    [[nodiscard]] inline int getCols() const;
 
-    void setCols(int cols);
+    [[maybe_unused]] inline void setCols(int cols);
 
     template<typename U>
     friend std::ostream &operator<<(std::ostream &, const Matrix<U> &);
@@ -332,22 +332,22 @@ Matrix<T> Matrix<T>::pushBackColumn(const std::vector<T> &col) {
  ********************************/
 
 template<class T>
-int Matrix<T>::getRows() const {
+inline int Matrix<T>::getRows() const {
     return rows_;
 }
 
 template<class T>
-void Matrix<T>::setRows(int rows) {
+inline void Matrix<T>::setRows(int rows) {
     rows_ = rows;
 }
 
 template<class T>
-int Matrix<T>::getCols() const {
+[[maybe_unused]] inline int Matrix<T>::getCols() const {
     return cols_;
 }
 
 template<class T>
-void Matrix<T>::setCols(int cols) {
+[[maybe_unused]] inline void Matrix<T>::setCols(int cols) {
     cols_ = cols;
 }
 
