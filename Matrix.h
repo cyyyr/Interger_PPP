@@ -46,6 +46,8 @@ public:
 
     Matrix<T> pushBackColumn(const std::vector<T> &);
 
+    static Matrix<T> pushMatrixFromVector(const std::vector<T> &, size_t);
+
     Matrix<T> transpose();
 
     static Matrix<T> createIdentity(int);
@@ -328,6 +330,17 @@ Matrix<T> Matrix<T>::pushBackColumn(const std::vector<T> &col) {
     return *this;
 }
 
+template<class T>
+Matrix<T> Matrix<T>::pushMatrixFromVector(const std::vector<T> &inputVector, const size_t size){
+    Matrix<T> outputMatrix;
+    for (size_t i = 0; i < size; ++i) {
+        auto first = inputVector.begin() + i * 6;
+        auto last = inputVector.begin()  + (i + 1) * 6;
+        std::vector<double> tempVector(first, last);
+        outputMatrix.pushBackRow(tempVector);
+    }
+    return outputMatrix;
+}
 /* GETTERS AND SETTERS
  ********************************/
 

@@ -1,5 +1,5 @@
 #include "LambdaTest.h"
 
 int main() {
-    return LambdaTest::test();
+    return LambdaTest::testFromFile();
 }
